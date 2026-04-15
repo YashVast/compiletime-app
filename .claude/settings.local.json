@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(java --version)",
+      "Bash(mvn --version)",
+      "Bash(mvn -q -DskipTests compile)",
+      "Bash(set MAVEN_OPTS=-Xmx512m -Xms256m)",
+      "Bash(mvn spring-boot:run)",
+      "Bash(timeout 20)",
+      "Bash(curl -s http://localhost:9999/api/stats)",
+      "Bash(ping -n 12 127.0.0.1)",
+      "Bash(curl -s http://localhost:9999/api/questions)",
+      "Bash(python -m json.tool)",
+      "Bash(curl -s -X POST \"http://localhost:9999/api/command/start?cmd=npm+run+build\")",
+      "Bash(ping -n 5 127.0.0.1)",
+      "Bash(curl -s -X POST \"http://localhost:9999/api/command/done?exit=0\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(taskkill /F /IM java.exe)",
+      "Bash(cmd /c \"taskkill /F /IM java.exe\")",
+      "Bash(ping -n 15 127.0.0.1)",
+      "Bash(cmd /c \"for /f \\\\\"tokens=5\\\\\" %a in \\('netstat -aon ^| findstr :9999'\\) do taskkill /F /PID %a\")",
+      "Bash(cmd /c \"netstat -aon | findstr :9999\")",
+      "Bash(cmd /c \"wmic process where name='java.exe' get processid,commandline 2>&1 | findstr compiletime\")",
+      "Bash(cmd /c \"netstat -ano | findstr 9999\")",
+      "Bash(cmd /c \"netstat -ano | findstr LISTEN | findstr 9999\")",
+      "Bash(cmd /c \"netstat -ano\")",
+      "Bash(netstat -ano)",
+      "Bash(cmd /c \"taskkill /F /PID 5828\")",
+      "Bash(ping -n 3 127.0.0.1)",
+      "Bash(ping -n 18 127.0.0.1)",
+      "Bash(cmd /c \"taskkill /F /T /PID 5828\")",
+      "Bash(cmd /c \"tasklist /FI \\\\\"PID eq 5828\\\\\"\")",
+      "Bash(tasklist)",
+      "Bash(echo.)"
+    ]
+  }
+}
