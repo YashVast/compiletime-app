@@ -17,16 +17,24 @@ public class BuildService {
     private final BuildSessionRepository repository;
     private final CommandClassifier classifier;
     private final DebounceService debounceService;
+    private final EventPublisher eventPublisher;
 
     // Tracks the single active build session (one build at a time for MVP)
     private final AtomicReference<BuildSession> activeSession = new AtomicReference<>();
 
+    // Tracks which sessions already had TRIGGER fired — so we only send DONE
+    // if the quiz was actually shown to the user
+    private final java.util.Set<Long> triggeredSessions =
+            java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+
     public BuildService(BuildSessionRepository repository,
                         CommandClassifier classifier,
-                        DebounceService debounceService) {
+                        DebounceService debounceService,
+                        EventPublisher eventPublisher) {
         this.repository = repository;
         this.classifier = classifier;
         this.debounceService = debounceService;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -77,6 +85,9 @@ public class BuildService {
         if (cancelledBeforeTrigger) {
             log.info("[BuildService] Build too fast ({}ms) — no quiz shown for session {}",
                     session.getDurationMs(), session.getId());
+        } else if (triggeredSessions.remove(session.getId())) {
+            // TRIGGER was already sent — tell the extension the build is done
+            eventPublisher.publishDone(exitCode, session.getDurationMs());
         }
 
         return repository.save(session);
@@ -88,7 +99,14 @@ public class BuildService {
      * via WebSocket (to be wired up in the next milestone).
      */
     private void onTrigger(Long sessionId) {
-        log.info("[BuildService] TRIGGER — session {} has been running over debounce window. Quiz time!", sessionId);
-        // TODO: publish TRIGGER event via EventPublisher (WebSocket) in next milestone
+        BuildSession session = activeSession.get();
+        if (session == null || !session.getId().equals(sessionId)) {
+            log.debug("[BuildService] Session {} no longer active when TRIGGER fired — skipping", sessionId);
+            return;
+        }
+
+        triggeredSessions.add(sessionId);
+        log.info("[BuildService] TRIGGER fired for session {} — broadcasting to extension", sessionId);
+        eventPublisher.publishTrigger(session.getCommand());
     }
 }
