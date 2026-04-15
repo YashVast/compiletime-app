@@ -1,0 +1,45 @@
+server:
+  port: 9999
+
+spring:
+  datasource:
+    url: jdbc:sqlite:${user.home}/.compiletime/data.db
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+compiletime:
+  detection:
+    debounce-seconds: 3
+    build-commands:
+      - npm run build
+      - npm install
+      - npm ci
+      - yarn build
+      - yarn install
+      - docker build
+      - docker pull
+      - docker-compose up
+      - cargo build
+      - cargo run
+      - gradle build
+      - gradlew build
+      - mvn install
+      - mvn package
+      - mvn compile
+      - make
+      - git clone
+      - git pull
+      - pip install
+      - poetry install
+      - go build
+      - go mod download
+
+  quiz:
+    question-time-seconds: 45
+    xp-correct: 10
+    xp-incorrect: 2
+    xp-timeout: 0
