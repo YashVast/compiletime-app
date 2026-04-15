@@ -1,0 +1,50 @@
+[
+  {
+    "id": "git-001",
+    "category": "git",
+    "difficulty": "easy",
+    "question": "What does `git stash` do?",
+    "options": [
+      "Permanently deletes uncommitted changes",
+      "Temporarily shelves changes so you can work on something else",
+      "Creates a new branch with your current changes",
+      "Merges your changes into the main branch"
+    ],
+    "correctIndex": 1,
+    "explanation": "git stash saves your uncommitted changes on a stack and reverts your working directory to the last commit. Run `git stash pop` to bring them back.",
+    "xp": 10,
+    "tags": ["git", "workflow"]
+  },
+  {
+    "id": "git-002",
+    "category": "git",
+    "difficulty": "easy",
+    "question": "What is the difference between `git fetch` and `git pull`?",
+    "options": [
+      "They are exactly the same command",
+      "fetch downloads changes but does not merge; pull downloads and merges",
+      "pull downloads changes but does not merge; fetch downloads and merges",
+      "fetch only works on branches, pull works on tags too"
+    ],
+    "correctIndex": 1,
+    "explanation": "`git fetch` downloads remote changes into your local repo without touching your working branch. `git pull` does fetch + merge (or rebase) in one step.",
+    "xp": 10,
+    "tags": ["git", "remote"]
+  },
+  {
+    "id": "git-003",
+    "category": "git",
+    "difficulty": "medium",
+    "question": "What does `git rebase -i HEAD~3` let you do?",
+    "options": [
+      "Revert the last 3 commits entirely",
+      "Interactively edit, squash, or reorder the last 3 commits",
+      "Create a branch from 3 commits ago",
+      "Cherry-pick the last 3 commits onto another branch"
+    ],
+    "correctIndex": 1,
+    "explanation": "Interactive rebase opens an editor where you can squash, reword, edit, or drop any of the last 3 commits before pushing — great for cleaning up history.",
+    "xp": 15,
+    "tags": ["git", "history"]
+  }
+]

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "js-001",
+    "category": "javascript",
+    "difficulty": "easy",
+    "question": "What is the output of `typeof null` in JavaScript?",
+    "options": [
+      "\"null\"",
+      "\"undefined\"",
+      "\"object\"",
+      "\"boolean\""
+    ],
+    "correctIndex": 2,
+    "explanation": "typeof null === \"object\" is a long-standing JavaScript bug from the original implementation. null is not an object, but this cannot be fixed without breaking existing code.",
+    "xp": 10,
+    "tags": ["javascript", "types"]
+  },
+  {
+    "id": "js-002",
+    "category": "javascript",
+    "difficulty": "medium",
+    "question": "What is the difference between `==` and `===` in JavaScript?",
+    "options": [
+      "No difference — they always produce the same result",
+      "`==` checks value only; `===` checks value and type",
+      "`===` checks value only; `==` checks value and type",
+      "`==` only works for numbers; `===` works for all types"
+    ],
+    "correctIndex": 1,
+    "explanation": "`==` uses type coercion (e.g. `0 == false` is true). `===` is strict — both the value and type must match (e.g. `0 === false` is false). Always prefer `===`.",
+    "xp": 10,
+    "tags": ["javascript", "operators"]
+  },
+  {
+    "id": "js-003",
+    "category": "javascript",
+    "difficulty": "medium",
+    "question": "What does the `async/await` syntax do under the hood?",
+    "options": [
+      "Creates real multi-threaded code",
+      "Converts synchronous code to run in a Web Worker",
+      "Is syntactic sugar over Promises — async functions always return a Promise",
+      "Blocks the main thread until the operation completes"
+    ],
+    "correctIndex": 2,
+    "explanation": "async/await is syntactic sugar over Promises. An async function always returns a Promise. `await` pauses execution of that function (not the thread) until the Promise resolves — the event loop continues running.",
+    "xp": 15,
+    "tags": ["javascript", "async", "promises"]
+  }
+]

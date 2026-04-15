@@ -1,0 +1,163 @@
+/* CompileTime Quiz Overlay */
+
+#compiletime-overlay {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 380px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  z-index: 2147483647; /* always on top */
+  overflow: hidden;
+  animation: ct-slide-in 0.25s ease-out;
+}
+
+@keyframes ct-slide-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ct-slide-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(16px); }
+}
+
+#compiletime-overlay.ct-hiding {
+  animation: ct-slide-out 0.2s ease-in forwards;
+}
+
+/* Header */
+#ct-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+}
+
+#ct-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #a6adc8;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+#ct-timer {
+  font-size: 13px;
+  font-weight: 700;
+  color: #cba6f7;
+  min-width: 28px;
+  text-align: right;
+}
+
+#ct-timer.ct-urgent {
+  color: #f38ba8;
+}
+
+/* Body */
+#ct-body {
+  padding: 16px;
+}
+
+#ct-command {
+  font-size: 11px;
+  color: #6c7086;
+  margin-bottom: 12px;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#ct-question {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-bottom: 16px;
+  color: #cdd6f4;
+}
+
+/* Options */
+#ct-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ct-option {
+  background: #313244;
+  border: 1px solid #45475a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #cdd6f4;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s;
+  line-height: 1.4;
+}
+
+.ct-option:hover:not(:disabled) {
+  background: #45475a;
+  border-color: #cba6f7;
+}
+
+.ct-option.ct-correct {
+  background: #1e3a2f;
+  border-color: #a6e3a1;
+  color: #a6e3a1;
+}
+
+.ct-option.ct-incorrect {
+  background: #3a1e1e;
+  border-color: #f38ba8;
+  color: #f38ba8;
+}
+
+.ct-option:disabled {
+  cursor: default;
+}
+
+/* Feedback bar shown after answering */
+#ct-feedback {
+  display: none;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+#ct-feedback.ct-show {
+  display: block;
+}
+
+#ct-feedback.ct-correct-fb {
+  background: #1e3a2f;
+  color: #a6e3a1;
+}
+
+#ct-feedback.ct-incorrect-fb {
+  background: #3a1e1e;
+  color: #f38ba8;
+}
+
+/* XP badge */
+#ct-xp {
+  display: none;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f9e2af;
+}
+
+#ct-xp.ct-show {
+  display: block;
+}

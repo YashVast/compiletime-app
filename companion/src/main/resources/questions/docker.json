@@ -1,0 +1,50 @@
+[
+  {
+    "id": "docker-001",
+    "category": "docker",
+    "difficulty": "easy",
+    "question": "What does the `EXPOSE` instruction in a Dockerfile actually do?",
+    "options": [
+      "Opens the port on the host machine automatically",
+      "Documents which port the container listens on at runtime",
+      "Blocks all other ports from being used",
+      "Creates a firewall rule for the container"
+    ],
+    "correctIndex": 1,
+    "explanation": "EXPOSE is documentation only. It tells Docker and developers which port the app uses, but does NOT publish it. You need the -p flag at `docker run` to actually bind the port.",
+    "xp": 10,
+    "tags": ["docker", "networking"]
+  },
+  {
+    "id": "docker-002",
+    "category": "docker",
+    "difficulty": "easy",
+    "question": "What is the difference between `CMD` and `ENTRYPOINT` in a Dockerfile?",
+    "options": [
+      "They are identical — either can be used",
+      "CMD sets the default command but can be overridden; ENTRYPOINT is always executed",
+      "ENTRYPOINT sets the default command but can be overridden; CMD is always executed",
+      "CMD runs at build time; ENTRYPOINT runs at container start"
+    ],
+    "correctIndex": 1,
+    "explanation": "ENTRYPOINT defines the executable that always runs. CMD provides default arguments to it (and can be overridden at `docker run`). Together: ENTRYPOINT is the binary, CMD is its default flags.",
+    "xp": 10,
+    "tags": ["docker", "dockerfile"]
+  },
+  {
+    "id": "docker-003",
+    "category": "docker",
+    "difficulty": "medium",
+    "question": "Why should you order Dockerfile instructions from least to most frequently changed?",
+    "options": [
+      "It makes the Dockerfile easier to read",
+      "Docker requires alphabetical ordering of instructions",
+      "Each instruction creates a layer; stable layers are cached and reused on rebuild",
+      "It reduces the final image size automatically"
+    ],
+    "correctIndex": 2,
+    "explanation": "Docker caches each layer. If a layer changes, all layers after it are invalidated. Putting stable things (like `apt-get install`) before frequently changing things (like `COPY . .`) maximises cache hits and speeds up builds.",
+    "xp": 15,
+    "tags": ["docker", "performance", "layers"]
+  }
+]
