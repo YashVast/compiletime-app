@@ -106,7 +106,7 @@ public class BuildService {
         }
 
         triggeredSessions.add(sessionId);
-        log.info("[BuildService] TRIGGER fired for session {} — broadcasting to extension", sessionId);
-        eventPublisher.publishTrigger(session.getCommand());
+        log.info("[BuildService] TRIGGER fired for session {} — showing overlay", sessionId);
+        eventPublisher.publishTrigger(session.getCommand(), sessionId);
     }
 }
