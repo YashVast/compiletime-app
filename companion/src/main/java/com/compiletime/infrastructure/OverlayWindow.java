@@ -126,10 +126,14 @@ public class OverlayWindow {
         timerLabel = new Label(QUIZ_SECONDS + "s");
         timerLabel.getStyleClass().add("timer-label");
 
+        Button closeBtn = new Button("✕");
+        closeBtn.getStyleClass().add("close-button");
+        closeBtn.setOnAction(e -> hide());
+
         HBox spacer = new HBox();
         javafx.scene.layout.HBox.setHgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        header.getChildren().addAll(title, spacer, timerLabel);
+        header.getChildren().addAll(title, spacer, timerLabel, closeBtn);
         return header;
     }
 
@@ -230,6 +234,7 @@ public class OverlayWindow {
         } catch (Exception e) {
             log.error("[OverlayWindow] Failed to save XP record", e);
         }
+
     }
 
     private void onTimeout() {
@@ -256,6 +261,7 @@ public class OverlayWindow {
         } catch (Exception e) {
             log.error("[OverlayWindow] Failed to save timeout XP record", e);
         }
+
     }
 
     // ── Countdown ───────────────────────────────────────────────────────────

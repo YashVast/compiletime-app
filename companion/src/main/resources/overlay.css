@@ -100,3 +100,18 @@
     -fx-font-weight: bold;
     -fx-alignment: center;
 }
+
+.close-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #6c7086;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 0 4 0 4;
+    -fx-cursor: hand;
+    -fx-border-color: transparent;
+}
+
+.close-button:hover {
+    -fx-text-fill: #f38ba8;
+    -fx-background-color: transparent;
+}

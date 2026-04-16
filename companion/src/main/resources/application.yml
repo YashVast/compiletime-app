@@ -15,6 +15,7 @@ compiletime:
   detection:
     debounce-seconds: 3
     build-commands:
+      - ping
       - npm run build
       - npm install
       - npm ci

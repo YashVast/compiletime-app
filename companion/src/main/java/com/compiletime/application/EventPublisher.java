@@ -33,11 +33,13 @@ public class EventPublisher {
 
     /**
      * Fired when the build process exits normally.
-     * Dismisses the overlay.
+     * We intentionally do NOT dismiss the overlay here — the user should be able
+     * to finish answering even after the build completes. The overlay closes itself
+     * after the user answers, the timer runs out, or they click the X button.
      */
     public void publishDone(int exitCode, long durationMs) {
-        log.info("[EventPublisher] DONE — dismissing overlay (exitCode={}, duration={}ms)", exitCode, durationMs);
-        overlayWindow.hide();
+        log.info("[EventPublisher] DONE — build finished (exitCode={}, duration={}ms), overlay stays until user dismisses",
+                exitCode, durationMs);
     }
 
     /**
