@@ -1,7 +1,7 @@
 # CompileTime — Session Progress
 
-> Last updated: April 15, 2026
-> Current milestone: Milestone 1 ✅ Complete → Starting Milestone 2
+> Last updated: April 17, 2026
+> Current milestone: Milestone 2 ✅ Complete → Starting Milestone 3
 
 ---
 
@@ -24,12 +24,20 @@ Full backend running on `localhost:9999`. All layers implemented:
 - `DebounceService` waits 3 seconds — ignores fast commands
 - `EventPublisher` fires `OverlayWindow.show()` after debounce passes
 - `OverlayWindow` renders a transparent, always-on-top JavaFX quiz card (bottom-right corner)
+- Overlay has ✕ close button — stays open until user manually dismisses
 - Question fetched from bundled JSON files (`resources/questions/`)
 - Answer saves `XpRecord` to SQLite at `~/.compiletime/data.db`
-- `/api/command/done` dismisses the overlay
 
 ### Question Bank
 9 questions across 3 categories: `javascript`, `docker`, `git`
+
+### Scripts (`scripts/`)
+| File | Purpose | Status |
+|------|---------|--------|
+| `hooks.ps1` | PSReadLine Enter key hook — fires on every PowerShell command | ✅ |
+| `process-monitor.ps1` | Polls every 500ms for build tool processes — works in CMD, Git Bash, any terminal | ✅ |
+| `Install-CompileTime.ps1` | One-time installer — patches $PROFILE + copies VBS to Startup folder | ✅ |
+| `start-compiletime.vbs` | Silent launcher — starts companion + monitor on Windows boot | ✅ |
 
 ### What Was Removed (Intentionally)
 - Chrome Extension (replaced by native JavaFX overlay — works over any app)
@@ -42,10 +50,12 @@ Full backend running on `localhost:9999`. All layers implemented:
 | Decision | Reason |
 |----------|--------|
 | Single Maven module, 4-layer packages | Learning-friendly, no multi-module overhead |
-| SQLite over Postgres | Local desktop tool, zero config |
+| SQLite over Postgres | Local desktop tool — each user has their own DB, zero config |
 | JavaFX overlay over Chrome Extension | Works over any app, not just browser |
 | `Platform.startup()` not `Application.launch()` | Spring Boot owns the main thread |
-| Vanilla questions JSON in classpath | Simple for MVP; SQLite migration planned for Phase 2 |
+| Vanilla questions JSON in classpath | Simple for MVP; SQLite migration planned for Milestone 3 |
+| PowerShell PSReadLine hook | Clean pre-command intercept, non-blocking |
+| PowerShell process monitor for CMD | CMD has no hook API — polling Win32_Process every 500ms works across all terminals |
 
 ---
 
@@ -59,11 +69,11 @@ mkdir C:\Users\maxis\.compiletime
 cd E:/Compiletime/companion
 mvn spring-boot:run
 
-# Test the loop (in another terminal)
-curl -X POST "http://localhost:9999/api/command/start?cmd=npm+run+build"
-# wait 3 seconds → overlay appears
-curl -X POST "http://localhost:9999/api/command/done?exit=0"
-# overlay dismisses
+# Start process monitor (new PowerShell window)
+& "E:\Compiletime\scripts\process-monitor.ps1"
+
+# Test — run any build command in CMD or PowerShell
+timeout /t 10 /nobreak
 ```
 
 ---
@@ -73,24 +83,23 @@ curl -X POST "http://localhost:9999/api/command/done?exit=0"
 | Milestone | Description | Status |
 |-----------|-------------|--------|
 | 1 | Skeleton works end-to-end | ✅ Done |
-| 2 | Real terminal detection (shell hooks + auto-start) | 🔲 Next |
-| 3 | Data persistence (XP saves, stats visible) | 🔲 Pending |
-| 4 | Windows support (PowerShell hook installer) | 🔲 Pending |
+| 2 | Real terminal detection (shell hooks + auto-start) | ✅ Done |
+| 3 | Data persistence (XP saves, stats visible) | 🔲 Next |
+| 4 | Windows support (PowerShell hook installer) | ✅ Done (merged into M2) |
 | 5 | Settings UI + 200+ questions + streaks | 🔲 Pending |
 
 ---
 
-## Milestone 2 — What Needs to Be Built
+## Milestone 3 — What Needs to Be Built
 
-1. **PowerShell hook installer** — script that injects hooks into `$PROFILE`
-2. **Hook scripts** — ping `/api/command/start` and `/api/command/done` on every terminal command
-3. **Auto-start on Windows boot** — register companion as a startup task (Task Scheduler)
-
-Target: running `npm run build` in any terminal triggers the overlay automatically.
+1. **Stats endpoint** — `/api/stats` returns total XP, streak, questions answered
+2. **Stats visible in overlay** — show current XP somewhere in the overlay UI
+3. **Streak tracking** — consecutive days with at least one correct answer
+4. **XP history** — query past sessions from SQLite
 
 ---
 
 ## GitHub
 Repo: https://github.com/YashVast/compiletime-app
 Branch: `main`
-Last commit: `refactor: remove Chrome Extension and WebSocket layer`
+Last commit: `feat: process monitor for CMD + fix double-start on VBS`

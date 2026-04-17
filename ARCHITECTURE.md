@@ -1,362 +1,225 @@
 # CompileTime — Architecture Document
 
-> Last updated: April 2026  
-> Status: Pre-development / Planning  
+> Last updated: April 17, 2026
+> Status: Milestone 2 complete
 > Author: Gaurav
 
 ---
 
 ## 1. System Overview
 
-CompileTime is a developer productivity tool that detects idle/waiting moments on a developer's machine (builds, installs, docker pulls, CI pipelines) and fills them with useful micro-tasks — primarily MCQ quizzes — to keep developers in flow instead of doom-scrolling.
-
-The system has two main pieces:
-- A **Companion App** (Spring Boot, runs as a background service on the user's machine)
-- A **Chrome Extension** (MV3, injects the quiz overlay into the active browser tab)
+CompileTime is a developer productivity tool that detects idle/waiting moments
+(builds, installs, docker pulls) and fills them with MCQ quizzes via a native
+overlay — keeping developers learning instead of doom-scrolling.
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        USER'S MACHINE                           │
-│                                                                 │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                  COMPANION APP (Spring Boot)             │   │
-│  │                                                         │   │
-│  │  ┌─────────────────┐    ┌──────────────────────────┐   │   │
-│  │  │  Detection Layer │    │   WebSocket Server       │   │   │
-│  │  │                 │    │   localhost:9999/ws       │   │   │
-│  │  │  ┌───────────┐  │    └──────────┬───────────────┘   │   │
-│  │  │  │Shell Hooks│  │               │                    │   │
-│  │  │  │zsh/bash/  │  │    ┌──────────▼───────────────┐   │   │
-│  │  │  │pwsh/fish  │  │    │       Event Bus           │   │   │
-│  │  │  └───────────┘  │    │  TRIGGER / DONE / ABORT  │   │   │
-│  │  │  ┌───────────┐  │───▶└──────────────────────────┘   │   │
-│  │  │  │  Process  │  │                                    │   │
-│  │  │  │  Monitor  │  │    ┌──────────────────────────┐   │   │
-│  │  │  │ (Windows  │  │    │   Settings UI             │   │   │
-│  │  │  │  CMD fix) │  │    │   (served at /settings)  │   │   │
-│  │  │  └───────────┘  │    └──────────────────────────┘   │   │
-│  │  │  ┌───────────┐  │                                    │   │
-│  │  │  │  Command  │  │    ┌──────────────────────────┐   │   │
-│  │  │  │Classifier │  │    │   SQLite Database         │   │   │
-│  │  │  └───────────┘  │    │   XP / streaks / history │   │   │
-│  │  └─────────────────┘    └──────────────────────────┘   │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│                     ▲  WebSocket (ws://)                       │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │                  CHROME EXTENSION (MV3)                  │   │
-│  │                                                         │   │
-│  │  ┌──────────────┐  ┌─────────────┐  ┌───────────────┐  │   │
-│  │  │  Background  │  │   Content   │  │  Browser-side │  │   │
-│  │  │  Service     │  │   Script    │  │  Detection    │  │   │
-│  │  │  Worker      │  │  (Overlay + │  │  (GitHub CI,  │  │   │
-│  │  │  (WS Client) │  │   Quiz UI)  │  │   Claude.ai)  │  │   │
-│  │  └──────────────┘  └─────────────┘  └───────────────┘  │   │
-│  └─────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                        USER'S MACHINE                        │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              COMPANION APP (Spring Boot :9999)        │   │
+│  │                                                      │   │
+│  │  ┌──────────────────┐    ┌────────────────────────┐  │   │
+│  │  │  Detection Layer │    │   JavaFX Overlay       │  │   │
+│  │  │                  │    │   (always-on-top,      │  │   │
+│  │  │  ┌────────────┐  │    │    transparent,        │  │   │
+│  │  │  │ PS Hook    │  │    │    bottom-right)       │  │   │
+│  │  │  │ hooks.ps1  │  │───▶│                        │  │   │
+│  │  │  └────────────┘  │    │  - Question card       │  │   │
+│  │  │  ┌────────────┐  │    │  - MCQ options         │  │   │
+│  │  │  │ Process    │  │    │  - Timer + XP          │  │   │
+│  │  │  │ Monitor    │  │    │  - X close button      │  │   │
+│  │  │  │ (CMD fix)  │  │    └────────────────────────┘  │   │
+│  │  │  └────────────┘  │                                │   │
+│  │  │  ┌────────────┐  │    ┌────────────────────────┐  │   │
+│  │  │  │ Command    │  │    │   SQLite Database       │  │   │
+│  │  │  │ Classifier │  │    │   ~/.compiletime/       │  │   │
+│  │  │  └────────────┘  │    │   data.db               │  │   │
+│  │  │  ┌────────────┐  │    └────────────────────────┘  │   │
+│  │  │  │ Debounce   │  │                                │   │
+│  │  │  │ Service    │  │    ┌────────────────────────┐  │   │
+│  │  │  │ (3s)       │  │    │   Question Bank        │  │   │
+│  │  │  └────────────┘  │    │   JSON files in        │  │   │
+│  │  └──────────────────┘    │   resources/questions/ │  │   │
+│  └──────────────────────────┴────────────────────────┘   │   │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │              SCRIPTS (PowerShell)                     │   │
+│  │                                                      │   │
+│  │  hooks.ps1          — PSReadLine Enter key hook      │   │
+│  │  process-monitor.ps1 — polls Get-Process every 500ms │   │
+│  │  start-compiletime.vbs — auto-start on Windows boot  │   │
+│  └──────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Companion App (Spring Boot)
+## 2. Detection Layer
 
-### 2.1 Responsibilities
-- Run as a background service/daemon on the user's machine
-- Expose REST endpoints that shell hooks ping on every command
-- Classify commands to determine if they are "build/wait" type
-- Debounce fast commands (ignore anything that finishes in under 3 seconds)
-- Broadcast WebSocket events to the Chrome Extension
-- Persist XP, streaks, build history, and user settings in SQLite
-- Serve the settings UI (React) at `localhost:9999/settings`
-- Provide a system tray icon (Java AWT) for quick access and status
+### 2.1 PowerShell Hook (`scripts/hooks.ps1`)
+Injected into `$PROFILE` by the installer. Uses PSReadLine to intercept
+the Enter key — fires BEFORE the command runs.
 
-### 2.2 Detection Layer
-
-#### Shell Hooks (mac/Linux)
-The installer injects hooks into `~/.zshrc`, `~/.bashrc`, or `~/.config/fish/config.fish`. These fire an HTTP ping to the companion app on every terminal command:
-
-```bash
-# Injected into ~/.zshrc by CompileTime installer
-compiletime_preexec() {
-  curl -s "http://localhost:9999/api/command/start?cmd=$(echo "$1" | base64)" &
-}
-compiletime_precmd() {
-  curl -s "http://localhost:9999/api/command/done?exit=$?" &
-}
-preexec_functions+=(compiletime_preexec)
-precmd_functions+=(compiletime_precmd)
-```
-
-#### Shell Hooks (Windows PowerShell)
-Injected into `$PROFILE`:
 ```powershell
-function Prompt {
-    $cmd = (Get-History -Count 1).CommandLine
-    Invoke-WebRequest -Uri "http://localhost:9999/api/command/done" -Method POST `
-      -Body @{cmd=$cmd; exit=$LASTEXITCODE} -UseBasicParsing | Out-Null
-    return "PS $($executionContext.SessionState.Path.CurrentLocation)> "
+# Pre-command: fires when user presses Enter
+Set-PSReadLineKeyHandler -Key Enter -ScriptBlock {
+    # get typed command, ping /api/command/start
+    [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
+}
+
+# Post-command: fires when prompt redraws after command finishes
+function prompt {
+    # ping /api/command/done
 }
 ```
 
-#### Process Monitor (Windows CMD fallback)
-Windows CMD has no native hook mechanism. The companion app runs a background thread using Java's `ProcessHandle` API to watch for new child processes matching known build tool names (`npm.exe`, `docker.exe`, `cargo.exe`, `gradle.bat`, etc.) and fires the same trigger/done pipeline.
+### 2.2 Process Monitor (`scripts/process-monitor.ps1`)
+CMD has no hook API. The process monitor polls `Get-Process` every 500ms
+and detects when known build tool executables appear or disappear.
 
-```java
-// Polls every 500ms for new matching processes
-ProcessHandle.allProcesses()
-    .filter(p -> classifier.isBuildProcess(p.info().command()))
-    .forEach(detectionService::trackProcess);
 ```
+Every 500ms:
+  Get-Process → filter by known build tool names
+  New PID seen?   → POST /api/command/start?cmd=<name>
+  Known PID gone? → POST /api/command/done?exit=0
+```
+
+Works across ALL terminals automatically — CMD, PowerShell, Git Bash,
+Windows Terminal, VS Code integrated terminal.
 
 ### 2.3 Command Classifier
+Not all commands trigger a quiz. The classifier checks the incoming
+command against a configurable list in `application.yml`:
 
-Not all terminal commands should trigger the quiz. The classifier evaluates the incoming command string:
-
-```
-Command arrives
-      ↓
-Match against known build command patterns
-      ├── npm run build / npm install / npm ci
-      ├── yarn build / yarn install
-      ├── docker build / docker pull / docker-compose up
-      ├── cargo build / cargo run / cargo test
-      ├── gradle build / gradlew build
-      ├── mvn install / mvn package / mvn compile
-      ├── make / cmake / cmake --build
-      ├── git clone / git pull (large repos)
-      ├── pip install / poetry install / pip sync
-      ├── go build / go mod download
-      └── kubectl apply / helm install
-      ↓
-Match found → start 3-second debounce timer
-      ↓
-Process still running after 3s?
-      ├── YES → fire TRIGGER event via WebSocket
-      └── NO  → it was instant, ignore silently
-      ↓
-Watch for process exit signal
-      ↓
-Fire DONE event → extension dismisses overlay
+```yaml
+compiletime.detection.build-commands:
+  - npm run build
+  - mvn install
+  - docker build
+  - git pull
+  # ... etc
 ```
 
-The command list is stored in `application.yml` and is user-configurable — developers can add custom build commands specific to their stack.
+Only matching commands pass through to the debounce timer.
 
-### 2.4 REST API
+### 2.4 Debounce Service
+Prevents fast commands (< 3 seconds) from showing the overlay.
+If `/api/command/done` arrives before 3 seconds, the timer is cancelled silently.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/command/start` | Shell hook fires when a command begins |
-| POST | `/api/command/done` | Shell hook fires when a command exits |
-| GET | `/api/status` | Extension polls this to check if companion is alive |
-| GET | `/api/questions?category=docker` | Returns a random question from the bank |
-| POST | `/api/xp/add` | Records XP earned after a quiz answer |
-| GET | `/api/stats` | Returns user's XP, streak, total builds intercepted |
-| GET | `/api/settings` | Returns current settings |
-| PUT | `/api/settings` | Updates settings |
+---
 
-### 2.5 WebSocket Events
+## 3. Overlay (JavaFX)
 
-The Chrome Extension maintains a persistent WebSocket connection to `ws://localhost:9999/ws`.
+A transparent, always-on-top JavaFX window positioned in the bottom-right
+corner. Works over any application — not limited to the browser.
 
-**Companion → Extension:**
-```json
-// Build detected, show the quiz
-{ "type": "TRIGGER", "cmd": "npm run build", "timestamp": 1712345678 }
+**Lifecycle:**
+```
+BuildService.onTrigger()
+    → EventPublisher.publishTrigger()
+    → OverlayWindow.show(command, sessionId)
+    → JavaFX Platform.runLater() → Stage.show()
 
-// Build finished, dismiss overlay
-{ "type": "DONE", "exitCode": 0, "durationMs": 45230 }
-
-// Build was cancelled (Ctrl+C)
-{ "type": "ABORT" }
+User clicks X or answers question
+    → OverlayWindow.hide()
+    → Stage.hide()
 ```
 
-**Extension → Companion:**
-```json
-// User answered a question
-{ "type": "ANSWER", "questionId": "js-042", "correct": true, "timeMs": 8200 }
+**Key design decisions:**
+- `StageStyle.TRANSPARENT` — no window chrome
+- `setAlwaysOnTop(true)` — floats over everything
+- `Platform.startup()` not `Application.launch()` — Spring Boot owns main thread
+- Overlay does NOT auto-dismiss when build finishes — user controls it
 
-// User dismissed the overlay manually
-{ "type": "DISMISSED" }
-```
+---
 
-### 2.6 Database Schema (SQLite)
+## 4. Data Layer (SQLite)
 
+**Why SQLite and not Postgres?**
+CompileTime is a local desktop tool. Each user's data lives entirely on
+their own machine. There is no shared server. SQLite is embedded, ships
+with the app, requires zero configuration, and handles single-user
+local data with ease.
+
+100k DAU = 100k separate SQLite files (one per machine), not 100k
+connections to a single database. SQLite is exactly right here.
+
+**Schema:**
 ```sql
--- Build sessions
 CREATE TABLE build_session (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    command TEXT NOT NULL,
-    started_at DATETIME NOT NULL,
-    ended_at DATETIME,
-    duration_ms INTEGER,
-    exit_code INTEGER,
-    quiz_completed BOOLEAN DEFAULT FALSE,
-    xp_earned INTEGER DEFAULT 0
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    command      TEXT NOT NULL,
+    started_at   DATETIME NOT NULL,
+    ended_at     DATETIME,
+    duration_ms  INTEGER,
+    exit_code    INTEGER
 );
 
--- XP and progress
 CREATE TABLE xp_record (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    session_id INTEGER REFERENCES build_session(id),
-    question_id TEXT NOT NULL,
-    correct BOOLEAN NOT NULL,
-    time_ms INTEGER,
-    xp_awarded INTEGER NOT NULL,
-    recorded_at DATETIME NOT NULL
-);
-
--- Streak tracking
-CREATE TABLE streak (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    date DATE NOT NULL UNIQUE,
-    quizzes_completed INTEGER DEFAULT 0,
-    xp_earned INTEGER DEFAULT 0
-);
-
--- User settings
-CREATE TABLE settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id   INTEGER REFERENCES build_session(id),
+    question_id  TEXT NOT NULL,
+    correct      BOOLEAN NOT NULL,
+    time_ms      INTEGER,
+    xp_awarded   INTEGER NOT NULL,
+    recorded_at  DATETIME NOT NULL
 );
 ```
 
 ---
 
-## 3. Chrome Extension (MV3)
-
-### 3.1 Responsibilities
-- Maintain WebSocket connection to companion app
-- Detect browser-side waiting moments independently (GitHub Actions, Claude.ai)
-- Inject quiz overlay into the active tab when a TRIGGER event arrives
-- Dismiss overlay on DONE/ABORT event
-- Send answer results back to companion via WebSocket
-
-### 3.2 Component Breakdown
-
-**Background Service Worker (`background/service-worker.js`)**
-- Manages WebSocket lifecycle (connect, reconnect on drop)
-- Listens for TRIGGER/DONE/ABORT events from companion
-- Messages the active tab's content script to show/hide overlay
-- Handles browser-side detection (URL pattern matching for CI pages)
-
-**Content Script (`content/overlay.js`)**
-- Injected into every tab (runs passively until activated)
-- On message from background worker: injects overlay DOM into current page
-- Renders quiz UI — question, 4 options, countdown timer, XP feedback
-- On answer or timer expiry: reports result back to background worker
-- On DONE: removes overlay cleanly
-
-**Browser-side Detection (inside service worker)**
-```
-URL patterns watched:
-  github.com/*/actions/runs/*         → GitHub Actions pipeline running
-  app.circleci.com/pipelines/*        → CircleCI pipeline
-  jenkins.*/job/*/build               → Jenkins build
-  claude.ai/chat/*                    → Claude thinking spinner (DOM watch)
-```
-
-### 3.3 Quiz Flow
+## 5. Auto-Start (Windows Boot)
 
 ```
-TRIGGER event received by service worker
-            ↓
-Is user actively typing in the current tab? (check focus state)
-            ↓ No
-Send SHOW_QUIZ message to active tab's content script
-            ↓
-Content script injects overlay
-  - Fetch question from companion: GET /api/questions
-  - Render question + 4 MCQ options
-  - Start 45-second countdown
-            ↓
-User selects answer
-  - Highlight correct/incorrect
-  - Show XP awarded
-  - POST result to companion via background worker
-            ↓
-DONE event received → overlay fade-out and removal
-(or user closes manually → send DISMISSED event)
+Install-CompileTime.ps1  (run once)
+    │
+    ├── Patches $PROFILE with hooks.ps1 source line
+    └── Copies start-compiletime.vbs to:
+        C:\Users\<user>\AppData\Roaming\Microsoft\Windows\
+        Start Menu\Programs\Startup\
+
+On every Windows boot:
+    start-compiletime.vbs runs automatically
+        ├── Checks if port 9999 is in use (prevents duplicate start)
+        ├── Starts companion: mvn spring-boot:run (hidden window)
+        └── Starts monitor:   process-monitor.ps1 (hidden window)
 ```
 
 ---
 
-## 4. Shell Hook Installer
-
-The companion app ships with an installer script that:
-1. Detects the user's default shell
-2. Injects the hook into the appropriate config file
-3. Backs up the original config before modifying
-4. Provides an uninstall command that removes the hooks cleanly
-
-The hooks are non-blocking (fire-and-forget with `&`) so they never slow down the terminal even if the companion app is not running.
-
----
-
-## 5. Question Bank
-
-Questions are stored as JSON files inside the companion's resources directory, organized by category. Each question follows this schema:
-
-```json
-{
-  "id": "docker-007",
-  "category": "docker",
-  "difficulty": "medium",
-  "question": "What does the EXPOSE instruction in a Dockerfile actually do?",
-  "options": [
-    "Opens the port on the host machine automatically",
-    "Documents which port the container listens on at runtime",
-    "Blocks all other ports from being used",
-    "Creates a firewall rule for the container"
-  ],
-  "correctIndex": 1,
-  "explanation": "EXPOSE is documentation only. It does not publish the port. You need -p flag at runtime to actually bind the port.",
-  "xp": 10,
-  "tags": ["docker", "networking", "containers"]
-}
-```
-
-Categories to build out over time: `javascript`, `java`, `docker`, `git`, `algorithms`, `linux`, `spring`, `sql`, `regex`, `http`, `system-design`.
-
----
-
-## 6. Tech Stack Summary
+## 6. Tech Stack
 
 | Layer | Technology | Notes |
 |-------|------------|-------|
-| Companion App | Spring Boot 3 (Java 21) | Background service, REST + WebSocket |
-| WebSocket | Spring WebSocket | Raw WebSocket (not STOMP for simplicity) |
-| REST API | Spring MVC | Shell hooks ping these endpoints |
-| Database | SQLite + Spring Data JPA | `org.xerial:sqlite-jdbc` driver |
-| System Tray | Java AWT `SystemTray` | Basic tray icon, open settings |
-| Settings UI | React (served by Spring Boot) | Served at `localhost:9999/settings` |
-| Chrome Extension | MV3, Vanilla JS | No framework, lightweight |
-| Overlay UI | Vanilla HTML/CSS | Injected into active tab |
-| Shell Hooks | Bash / PowerShell scripts | Auto-injected by installer |
-| Process Monitor | Java `ProcessHandle` API | Windows CMD fallback detection |
-| Distribution | `jpackage` with bundled JRE | Ships as .exe / .dmg / .deb |
-| Long-term | GraalVM native image | Native binary, no JVM dependency |
+| Companion App | Spring Boot 3 (Java 21) | Background service, REST API |
+| Overlay UI | JavaFX | Transparent always-on-top window |
+| REST API | Spring MVC | Shell hooks + process monitor ping these |
+| Database | SQLite + Spring Data JPA | Per-user local file, zero config |
+| PS Hook | PowerShell PSReadLine | Enter key intercept in $PROFILE |
+| Process Monitor | PowerShell Get-Process | 500ms polling, covers all terminals |
+| Auto-start | VBScript | Silent Windows Startup folder launcher |
+| Distribution (future) | jpackage + bundled JRE | Ships as .exe installer |
 
 ---
 
 ## 7. Key Architectural Decisions
 
-**Why Spring Boot over Node/Electron?**
-The developer is learning Spring Boot and wants to build real-world experience with it. Spring Boot's WebSocket support, REST capabilities, and Spring Data JPA are all well-suited to this use case. The JVM requirement is acceptable for a developer-targeted tool.
-
-**Why SQLite over PostgreSQL/MySQL?**
-This is a local desktop tool. There is no server. SQLite is embedded, ships with the app, requires zero configuration from the user, and is more than sufficient for single-user local data.
-
-**Why Vanilla JS for the extension?**
-The Chrome Extension is UI-thin. Adding React or Vue would require a build step and increase bundle size for no meaningful benefit. The overlay is a simple MCQ card — vanilla JS is the right tool.
-
-**Why no MCP integration?**
-MCP (Model Context Protocol) is designed for connecting AI assistants to external tools and data sources. CompileTime's core loop (detect build → show quiz → save XP) has no need for an AI model to query its data. If Claude API integration is added later for dynamic question generation, it will be a direct API call from the Spring Boot service — MCP adds no value here.
+| Decision | Reason |
+|----------|--------|
+| JavaFX overlay over Chrome Extension | Works over any app, not just browser |
+| SQLite over Postgres | Local desktop — each user has their own DB |
+| PowerShell PSReadLine hook | Clean pre-command intercept, non-blocking |
+| PowerShell process monitor | CMD has no hook API — polling covers all terminals |
+| `Platform.startup()` | Spring Boot owns main thread, JavaFX is secondary |
+| No WebSocket | Removed when Chrome Extension was dropped — not needed |
+| JSON question bank | Simple for MVP; SQLite migration in Milestone 3 |
 
 ---
 
-## 8. Security Considerations
+## 8. Security
 
-- The companion app binds to `localhost` only — never exposed to the network
-- WebSocket connection is local-only (`ws://localhost:9999`)
-- Shell hooks are fire-and-forget, non-blocking, and non-destructive
-- SQLite database is stored in the user's local app data directory
-- No user data leaves the machine unless explicitly opted into (future cloud sync feature)
+- Companion binds to `localhost` only — never exposed to network
+- Shell hooks are fire-and-forget, non-blocking, non-destructive
+- SQLite stored in user's local app data directory
+- No data leaves the machine
