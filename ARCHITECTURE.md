@@ -217,7 +217,32 @@ On every Windows boot:
 
 ---
 
-## 8. Security
+## 8. Future — AI Pipeline (Planned, Milestone 6+)
+
+When the enterprise/social layer lands, a new backend service handles
+content generation automatically:
+
+```
+Manager drops a blog URL or article
+    → Backend fetches content
+    → Claude API call:
+       "Generate 5 MCQ questions from this, category: infer, difficulty: medium"
+    → Structured QnA stored in Postgres under org's question bank
+    → Questions surface in team members' overlays during builds
+```
+
+Same pipeline will power:
+- Book pages → comprehension questions
+- Internal docs → onboarding quizzes
+- Feed personalization → surface weak areas more often
+- Morning content → summarize tech news, make it engaging
+
+This makes question content infinite and zero-maintenance.
+See VISION.md for full product roadmap.
+
+---
+
+## 9. Security
 
 - Companion binds to `localhost` only — never exposed to network
 - Shell hooks are fire-and-forget, non-blocking, non-destructive
